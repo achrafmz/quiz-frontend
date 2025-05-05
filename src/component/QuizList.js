@@ -17,7 +17,7 @@ const QuizList = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    // In a real app, you would fetch data for the new page here
+    // In areeal app, you would fetch data for the new page here
   };
 
   return (

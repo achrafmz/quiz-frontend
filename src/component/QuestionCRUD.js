@@ -18,7 +18,6 @@ function QuestionCRUD() {
     fetchQuestions();
     fetchQuizzes();
   }, []);
-
   const fetchQuestions = async () => {
     try {
       const res = await axios.get("http://localhost:9090/api/questions");

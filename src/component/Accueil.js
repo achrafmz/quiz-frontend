@@ -10,7 +10,6 @@ function Accueil() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Toutes');
   const [categories, setCategories] = useState([]);
-
   const pages = [1, 2, 3, '...', 67, 80];
 
   useEffect(() => {
