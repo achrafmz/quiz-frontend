@@ -1,0 +1,33 @@
+/* Quiz.css */
+.quiz-container {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+  }
+  
+  .question-section {
+    margin-bottom: 20px;
+  }
+  
+  .options-section {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .option-button {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    cursor: pointer;
+  }
+  
+  .option-button.selected {
+    background-color: orange;
+    color: white;
+  }
+  
+  .results {
+    text-align: center;
+  }
+  

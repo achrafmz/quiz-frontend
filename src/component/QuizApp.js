@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaEdit, FaTrash } from 'react-icons/fa';
 import './QuizApp.css';
 
 const API_URL = 'http://localhost:9090/api';
 
 const QuizApp = () => {
+  // États principaux
   const [quizzes, setQuizzes] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [form, setForm] = useState({
+  const [questions, setQuestions] = useState([]);
+
+  // Formulaire de création du quiz
+  const [quizForm, setQuizForm] = useState({
     id: null,
     nom: '',
     description: '',
@@ -17,95 +20,204 @@ const QuizApp = () => {
     photo: null
   });
 
+  // Formulaire de création de question
+  const [questionForm, setQuestionForm] = useState({
+    enonce: '',
+    type: '', // unique / choix_multiple
+    points: 0,
+    explication: '',
+    quiz: { id: '' },
+    options: [],              // Liste des options
+    reponsesCorrectes: []     // Indices des réponses correctes
+  });
+
+  const [currentQuizId, setCurrentQuizId] = useState(null); // Quiz sélectionné
+
+  // --- Récupération des données au montage ---
   useEffect(() => {
     fetchQuizzes();
     fetchCategories();
-  }, []);
+    if (currentQuizId) {
+      fetchQuestions(currentQuizId);
+    }
+  }, [currentQuizId]);
 
-  // Récupérer les quizzes depuis l'API
+  // --- Récupérer les quizzes ---
   const fetchQuizzes = async () => {
     try {
       const res = await axios.get(`${API_URL}/quizzes`);
-      console.log('Quizzes récupérés:', res.data); // Vérification des données
       setQuizzes(res.data);
     } catch (error) {
-      console.error('Erreur de récupération des quizzes:', error);
+      console.error('Erreur lors de la récupération des quizzes:', error);
     }
   };
 
-  // Récupérer les catégories depuis l'API
+  // --- Récupérer les catégories ---
   const fetchCategories = async () => {
     try {
       const res = await axios.get(`${API_URL}/categories`);
-      console.log('Catégories récupérées:', res.data); // Vérification des catégories
       setCategories(res.data);
     } catch (error) {
-      console.error('Erreur de récupération des catégories:', error);
+      console.error('Erreur lors de la récupération des catégories:', error);
     }
   };
 
-  // Gérer le changement des champs du formulaire
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // --- Récupérer les questions d’un quiz ---
+  const fetchQuestions = async (quizId) => {
+    try {
+      const res = await axios.get(`${API_URL}/questions/quiz/${quizId}`);
+      setQuestions(res.data);
+    } catch (error) {
+      console.error(`Impossible de charger les questions du quiz ${quizId}`, error);
+    }
   };
 
-  // Gérer le changement du fichier (photo)
-  const handleFileChange = (e) => {
-    setForm({ ...form, photo: e.target.files[0] });
+  // --- Gestion du formulaire du quiz ---
+  const handleQuizChange = (e) => {
+    const { name, value } = e.target;
+    setQuizForm({ ...quizForm, [name]: value });
   };
 
-  // Soumettre le formulaire pour créer ou modifier un quiz
-  const handleSubmit = async (e) => {
+  const handleQuizFileChange = (e) => {
+    setQuizForm({ ...quizForm, photo: e.target.files[0] });
+  };
+
+  const handleQuizSubmit = async (e) => {
     e.preventDefault();
-
     const formData = new FormData();
-    formData.append('nom', form.nom);
-    formData.append('description', form.description);
-    formData.append('difficulte', form.difficulte);
-    formData.append('categorieId', form.categorieId);
-    if (form.photo) {
-      formData.append('photo', form.photo);
+    formData.append('nom', quizForm.nom);
+    formData.append('description', quizForm.description);
+    formData.append('difficulte', quizForm.difficulte);
+    formData.append('categorieId', quizForm.categorieId);
+    if (quizForm.photo) {
+      formData.append('photo', quizForm.photo);
     }
 
     try {
-      if (form.id) {
-        await axios.put(`${API_URL}/quizzes/${form.id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+      let response;
+      if (quizForm.id) {
+        response = await axios.put(`${API_URL}/quizzes/${quizForm.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
-        await axios.post(`${API_URL}/quizzes`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+        response = await axios.post(`${API_URL}/quizzes`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
 
-      setForm({ id: null, nom: '', description: '', difficulte: '', categorieId: '', photo: null });
-      fetchQuizzes(); // Rafraîchir la liste des quizzes après soumission
+      const createdQuiz = response.data;
+      setQuizForm({
+        id: createdQuiz.id,
+        nom: createdQuiz.nom,
+        description: createdQuiz.description,
+        difficulte: createdQuiz.difficulte,
+        categorieId: createdQuiz.categorie?.id || '',
+        photo: null
+      });
+
+      setCurrentQuizId(createdQuiz.id);
+      fetchQuizzes();
     } catch (error) {
-      console.error('Erreur lors de la soumission du quiz:', error);
+      console.error("Erreur lors de la soumission du quiz:", error);
     }
   };
 
-  // Modifier un quiz
-  const handleEdit = (quiz) => {
-    setForm({
-      id: quiz.id,
-      nom: quiz.nom,
-      description: quiz.description,
-      difficulte: quiz.difficulte,
-      categorieId: quiz.categorie.id,
-      photo: null
+  // --- Gestion des options ---
+  const addOption = () => {
+    setQuestionForm(prev => ({
+      ...prev,
+      options: [...prev.options, ''],
+      reponsesCorrectes: []
+    }));
+  };
+
+  const removeOption = (index) => {
+    setQuestionForm(prev => {
+      const newOptions = prev.options.filter((_, i) => i !== index);
+      const newCorrectes = prev.reponsesCorrectes.filter(i => i !== index);
+      return {
+        ...prev,
+        options: newOptions,
+        reponsesCorrectes: newCorrectes
+      };
     });
   };
 
-  // Supprimer un quiz
-  const handleDelete = async (id) => {
-    if (window.confirm('Confirmer la suppression ?')) {
-      try {
-        await axios.delete(`${API_URL}/quizzes/${id}`);
-        fetchQuizzes(); // Rafraîchir la liste après suppression
-      } catch (error) {
-        console.error('Erreur lors de la suppression du quiz:', error);
+  const handleOptionChange = (index, value) => {
+    setQuestionForm(prev => {
+      const newOptions = [...prev.options];
+      newOptions[index] = value;
+      return { ...prev, options: newOptions };
+    });
+  };
+
+  const toggleCorrectAnswer = (index) => {
+    setQuestionForm(prev => {
+      const correctes = [...prev.reponsesCorrectes];
+
+      if (questionForm.type === 'unique') {
+        // Un seul choix autorisé
+        return { ...prev, reponsesCorrectes: [index] };
       }
+
+      // Choix multiples : toggle
+      const idx = correctes.indexOf(index);
+      if (idx > -1) {
+        correctes.splice(idx, 1); // Décocher
+      } else {
+        correctes.push(index);    // Cocher
+      }
+
+      return { ...prev, reponsesCorrectes: correctes };
+    });
+  };
+
+  // --- Gestion des questions ---
+  const handleQuestionChange = (e) => {
+    const { name, value } = e.target;
+    setQuestionForm((prev) => ({
+      ...prev,
+      [name]: value,
+      quiz: { id: currentQuizId },
+      ...(name === 'type' && { reponsesCorrectes: [] }) // Réinitialise les réponses
+    }));
+  };
+
+  const handleQuestionSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API_URL}/questions`, {
+        ...questionForm,
+        quiz: { id: currentQuizId },
+        options: questionForm.options.map((texte, index) => ({
+          texte,
+          correcte: questionForm.reponsesCorrectes.includes(index)
+        }))
+      });
+
+      setQuestionForm({
+        enonce: '',
+        type: '',
+        points: 0,
+        explication: '',
+        quiz: { id: currentQuizId },
+        options: [],
+        reponsesCorrectes: []
+      });
+
+      fetchQuestions(currentQuizId);
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de la question", error);
+    }
+  };
+
+  const handleDeleteQuestion = async (id) => {
+    if (!window.confirm("Confirmer la suppression ?")) return;
+    try {
+      await axios.delete(`${API_URL}/questions/${id}`);
+      fetchQuestions(currentQuizId);
+    } catch (error) {
+      console.error("Erreur lors de la suppression", error);
     }
   };
 
@@ -116,7 +228,6 @@ const QuizApp = () => {
         <nav className="nav-menu">
           {['Dashboard', 'Quiz', 'Questions', 'Users', 'Categorie', 'Settings'].map((item) => (
             <div key={item} className={`nav-item ${item === 'Quiz' ? 'active' : ''}`}>
-              <div className="nav-icon"></div>
               <span>{item}</span>
             </div>
           ))}
@@ -125,139 +236,213 @@ const QuizApp = () => {
 
       <div className="main-content">
         <header className="header">
-          <h1 className="page-title">Gestion des Quiz</h1>
+          <h1 className="page-title">{currentQuizId ? "Création des Questions" : "Création d'un Quiz"}</h1>
           <div className="user-controls">
             <button className="logout-btn">Logout</button>
             <div className="user-info">
               <span>Anasse Lekkioui</span>
               <div className="user-avatar-container">
                 <div className="user-avatar"></div>
-                <span className="dropdown-icon">▼</span>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="form-container">
-          <form onSubmit={handleSubmit} className="form-grid" encType="multipart/form-data">
-            <div className="form-group">
-              <label>Nom du Quiz</label>
-              <input
-                type="text"
-                name="nom"
-                placeholder="Nom du quiz"
-                value={form.nom}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Description</label>
-              <input
-                type="text"
-                name="description"
-                placeholder="Description"
-                value={form.description}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Difficulté</label>
-              <select
-                name="difficulte"
-                value={form.difficulte}
-                onChange={handleChange}
-                required
-              >
-                <option value="">-- Choisir la difficulté --</option>
-                <option value="FACILE">FACILE</option>
-                <option value="MOYENNE">MOYENNE</option>
-                <option value="DIFFICILE">DIFFICILE</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Catégorie</label>
-              <select
-                name="categorieId"
-                value={form.categorieId}
-                onChange={handleChange}
-                required
-              >
-                <option value="">-- Choisir une catégorie --</option>
-                {categories.length > 0 ? (
-                  categories.map((cat) => (
+        {/* Création du quiz */}
+        {!currentQuizId && (
+          <div className="form-container">
+            <form onSubmit={handleQuizSubmit} encType="multipart/form-data">
+              <div className="form-group">
+                <label>Nom du Quiz</label>
+                <input
+                  type="text"
+                  name="nom"
+                  placeholder="Nom du quiz"
+                  value={quizForm.nom}
+                  onChange={handleQuizChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <input
+                  type="text"
+                  name="description"
+                  placeholder="Description"
+                  value={quizForm.description}
+                  onChange={handleQuizChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Difficulté</label>
+                <select
+                  name="difficulte"
+                  value={quizForm.difficulte}
+                  onChange={handleQuizChange}
+                  required
+                >
+                  <option value="">-- Choisir la difficulté --</option>
+                  <option value="FACILE">FACILE</option>
+                  <option value="MOYENNE">MOYENNE</option>
+                  <option value="DIFFICILE">DIFFICILE</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Catégorie</label>
+                <select
+                  name="categorieId"
+                  value={quizForm.categorieId}
+                  onChange={handleQuizChange}
+                  required
+                >
+                  <option value="">-- Choisir une catégorie --</option>
+                  {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.nom}</option>
-                  ))
-                ) : (
-                  <option disabled>Aucune catégorie disponible</option>
-                )}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Photo</label>
-              <input
-                type="file"
-                name="photo"
-                accept="image/*"
-                onChange={handleFileChange}
-              />
-            </div>
-            <button type="submit" className="generate-btn">
-              {form.id ? 'Modifier' : 'Ajouter'}
-            </button>
-          </form>
-        </div>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Photo</label>
+                <input
+                  type="file"
+                  name="photo"
+                  accept="image/*"
+                  onChange={handleQuizFileChange}
+                />
+              </div>
+              <button type="submit" className="generate-btn">
+                Créer le Quiz
+              </button>
+            </form>
+          </div>
+        )}
 
-        <div className="quiz-table-container">
-          <table className="quiz-table">
-            <thead>
-              <tr>
-                <th>Id</th>
-                <th>Nom</th>
-                <th>Description</th>
-                <th>Difficulté</th>
-                <th>Catégorie</th>
-                <th>Image</th> {/* Nouvelle colonne pour l'image */}
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quizzes.length > 0 ? (
-                quizzes.map((quiz) => (
-                  <tr key={quiz.id}>
-                    <td>{quiz.id}</td>
-                    <td>{quiz.nom}</td>
-                    <td>{quiz.description}</td>
-                    <td>{quiz.difficulte}</td>
-                    <td>{quiz.categorie ? quiz.categorie.nom : 'Aucune catégorie'}</td>
-                    <td>
-                      {quiz.photo ? (
-                        <img src={quiz.photo} alt={quiz.nom} width="100" height="100" />
-                      ) : (
-                        'Pas d\'image'
-                      )}
-                    </td>
-                    <td>
-                      <button className="action-btn edit" onClick={() => handleEdit(quiz)}>
-                        <FaEdit />
-                      </button>
-                      <button className="action-btn delete" onClick={() => handleDelete(quiz.id)}>
-                        <FaTrash />
-                      </button>
-                    </td>
+        {/* Gestion des questions */}
+        {currentQuizId && (
+          <>
+            <div className="form-container">
+              <h3>Ajouter une question pour : "{quizForm.nom}"</h3>
+              <form onSubmit={handleQuestionSubmit}>
+                <div className="form-group">
+                  <label>Énoncé</label>
+                  <input
+                    type="text"
+                    name="enonce"
+                    placeholder="Énoncé de la question"
+                    value={questionForm.enonce}
+                    onChange={handleQuestionChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Type</label>
+                  <select
+                    name="type"
+                    value={questionForm.type}
+                    onChange={handleQuestionChange}
+                    required
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    <option value="unique">Unique</option>
+                    <option value="choix_multiple">Choix multiple</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Points</label>
+                  <input
+                    type="number"
+                    name="points"
+                    value={questionForm.points}
+                    onChange={(e) =>
+                      setQuestionForm((prev) => ({ ...prev, points: parseInt(e.target.value) }))
+                    }
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Explication</label>
+                  <input
+                    type="text"
+                    name="explication"
+                    value={questionForm.explication}
+                    onChange={handleQuestionChange}
+                  />
+                </div>
+
+                {/* Options dynamiques */}
+                <h4>Options</h4>
+                {questionForm.options.map((opt, index) => (
+                  <div key={index} style={{ display: "flex", gap: "10px", marginBottom: "8px" }}>
+                    <input
+                      type="text"
+                      placeholder={`Option ${index + 1}`}
+                      value={opt}
+                      onChange={(e) => handleOptionChange(index, e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    {(questionForm.type === "unique" || questionForm.type === "choix_multiple") && (
+                      <label>
+                        <input
+                          type={questionForm.type === "unique" ? "radio" : "checkbox"}
+                          checked={questionForm.reponsesCorrectes.includes(index)}
+                          onChange={() => toggleCorrectAnswer(index)}
+                          name={questionForm.type === "unique" ? "correctAnswer" : undefined}
+                        />
+                        Correct ?
+                      </label>
+                    )}
+                    <button type="button" onClick={() => removeOption(index)}>Supprimer</button>
+                  </div>
+                ))}
+                <button type="button" onClick={addOption}>+ Ajouter option</button>
+                <button type="submit" className="generate-btn">
+                  Ajouter la question
+                </button>
+              </form>
+            </div>
+
+            {/* Tableau des questions */}
+            <div className="quiz-table-container">
+              <h4>Liste des Questions</h4>
+              <table className="quiz-table">
+                <thead>
+                  <tr>
+                    <th>Énoncé</th>
+                    <th>Type</th>
+                    <th>Points</th>
+                    <th>Explication</th>
+                    <th>Options</th>
+                    <th>Actions</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>
-                    Aucun quiz trouvé
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                {questions && Array.isArray(questions) ? (
+  questions.map((q) => (
+    <tr key={q.id}>
+      <td>{q.enonce}</td>
+      <td>{q.type}</td>
+      <td>{q.points}</td>
+      <td>{q.explication}</td>
+      <td>
+        {q.options && Array.isArray(q.options) ? (
+          q.options.map((opt, i) => (
+            <div key={i}>{opt.texte}</div>
+          ))
+        ) : (
+          "Aucune option"
+        )}
+      </td>
+    </tr>
+  ))
+) : (
+  <tr><td colSpan="6">Aucune question trouvée</td></tr>
+)}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

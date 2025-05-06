@@ -1,6 +1,10 @@
+// Accueil.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './Accueil.css';
+import { auth } from './firebase';
+import { signOut } from 'firebase/auth';
 
 function Accueil() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -10,8 +14,22 @@ function Accueil() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Toutes');
   const [categories, setCategories] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
 
   const pages = [1, 2, 3, '...', 67, 80];
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -38,51 +56,69 @@ function Accueil() {
     fetchCategories();
   }, []);
 
-  // Fonction pour filtrer selon recherche + catégorie
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      alert('Déconnexion réussie');
+      navigate('/');  // redirige vers page d'accueil ou login
+    } catch (error) {
+      console.error('Erreur de déconnexion :', error);
+    }
+  };
+
   const filteredQuizzes = quizzes.filter((quiz) => {
     const matchSearch = quiz.nom.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategory = selectedCategory === 'Toutes' || (quiz.categorie && quiz.categorie.nom === selectedCategory);
     return matchSearch && matchCategory;
   });
 
+  const handlePlayClick = (id) => {
+    navigate(`/quiz/${id}`);
+  };
+
   return (
     <div className="quiz-app">
-      {/* Header */}
       <header className="header">
         <h1 className="app-title">Quiz App</h1>
         <div className="header-right">
-          <button className="logout-btn">Log Out</button>
-          <div className="user-profile">
-            <div className="profile-trigger" onClick={() => setMenuOpen(!menuOpen)}>
-              <span className="user-name">Achraf Mazouz</span>
-              <div className="avatar">AM</div>
-            </div>
+          {currentUser && (
+            <>
+              <button className="logout-btn" onClick={handleLogout}>Log Out</button>
+              <div className="user-profile">
+                <div className="profile-trigger" onClick={() => setMenuOpen(!menuOpen)}>
+                  <span className="user-name">{currentUser.displayName}</span>
+                  <div className="avatar">
+                    {currentUser.displayName
+                      ?.split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .toUpperCase()}
+                  </div>
+                </div>
 
-            {menuOpen && (
-              <div className="dropdown-menu">
-                <ul>
-                  <li><span className="menu-dot"></span>Profil</li>
-                  <li><span className="menu-dot"></span>My Quiz</li>
-                  <li><span className="menu-dot"></span>Settings</li>
-                </ul>
+                {menuOpen && (
+                  <div className="dropdown-menu">
+                    <ul>
+                      <li><span className="menu-dot"></span>Profil</li>
+                      <li><span className="menu-dot"></span>My Quiz</li>
+                      <li><span className="menu-dot"></span>Settings</li>
+                    </ul>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </header>
 
-      {/* Welcome Banner */}
       <div className="welcome-banner">
-        <h2>Bonjour Achraf,</h2>
+        <h2>Bonjour {currentUser?.displayName},</h2>
       </div>
 
-      {/* Main Content */}
       <div className="main-content">
         <div className="content-header">
           <h2>Cours For You</h2>
-
           <div className="filters">
-            {/* Search Box */}
             <div className="search-box">
               <input
                 type="text"
@@ -92,8 +128,6 @@ function Accueil() {
               />
               <span className="search-icon">🔍</span>
             </div>
-
-            {/* Filter Dropdown */}
             <div className="filter-dropdown">
               <select
                 className="filter-button"
@@ -111,7 +145,6 @@ function Accueil() {
           </div>
         </div>
 
-        {/* Course Grid */}
         <div className="course-grid">
           {loading ? (
             <p>Chargement des quizzes...</p>
@@ -124,7 +157,7 @@ function Accueil() {
                     alt={quiz.nom}
                     className="card-image"
                   />
-                  <button className="play-button">Play</button>
+                  <button className="play-button" onClick={() => handlePlayClick(quiz.id)}>Play</button>
                 </div>
                 <h3 className="course-title">{quiz.nom}</h3>
                 <p className="course-category">{quiz.categorie?.nom}</p>
@@ -135,7 +168,6 @@ function Accueil() {
           )}
         </div>
 
-        {/* Pagination */}
         <div className="pagination">
           {pages.map((page, index) => (
             <button
