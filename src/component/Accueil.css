@@ -5,13 +5,13 @@
     box-sizing: border-box;
     font-family: Arial, sans-serif;
   }
-  
+  /*quiz*/
   .quiz-app {
     max-width: 1200px;
     margin: 0 auto;
   }
   
-  /* Header Styles */
+  /* Header Style */
   .header {
     display: flex;
     justify-content: space-between;

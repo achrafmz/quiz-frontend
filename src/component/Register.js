@@ -1,31 +1,38 @@
-// src/Login.js
+// src/Register.js
 import React, { useState } from 'react';
-import './Signup.css'; // On réutilise ton style Signup
-import { auth, googleProvider } from './firebase'; // adapte si ton fichier firebase est ailleurs
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import './Signup.css';
+import { auth, googleProvider } from './firebase';
+import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
+const Register = () => {
+  const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleEmailLogin = async () => {
-    if (!email || !password) {
+  const handleEmailRegister = async () => {
+    if (!fullname || !email || !password) {
       alert('Veuillez remplir tous les champs.');
       return;
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert('Connexion réussie !');
-      navigate('/'); // Redirige vers page d'accueil ou dashboard
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // On met à jour le profil avec le fullname
+      await updateProfile(userCredential.user, {
+        displayName: fullname,
+      });
+
+      alert('Compte créé avec succès !');
+      navigate('/');
     } catch (error) {
       alert(error.message);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleRegister = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
       alert('Connexion Google réussie !');
@@ -39,9 +46,16 @@ const Login = () => {
     <div className="signup-container">
       <h1 className="title">Quiz App</h1>
       <div className="signup-box">
-        <h2>Connexion</h2>
-        <p>Connectez-vous pour accéder à l'application</p>
+        <h2>Créer un compte</h2>
+        <p>Entrez vos informations pour vous inscrire</p>
 
+        <input
+          type="text"
+          placeholder="Nom complet"
+          className="email-input"
+          value={fullname}
+          onChange={(e) => setFullname(e.target.value)}
+        />
         <input
           type="email"
           placeholder="Email"
@@ -56,14 +70,14 @@ const Login = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        
-        <button className="email-button" onClick={handleEmailLogin}>
-          Se connecter avec Email
+
+        <button className="email-button" onClick={handleEmailRegister}>
+          S'inscrire avec Email
         </button>
 
         <div className="divider">ou continuez avec</div>
 
-        <button className="google-button" onClick={handleGoogleLogin}>
+        <button className="google-button" onClick={handleGoogleRegister}>
           <img src="https://img.icons8.com/color/16/000000/google-logo.png" alt="Google" />
           Google
         </button>
@@ -76,4 +90,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
