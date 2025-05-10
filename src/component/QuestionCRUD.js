@@ -168,7 +168,7 @@ function QuestionCRUD() {
   );
 }
 
-// --- Composants réutilisables ------
+// --- Composants réutilisables ----
 const Sidebar = () => (
   <aside className="sidebar">
     <h2 className="app-title">Quiz App</h2>

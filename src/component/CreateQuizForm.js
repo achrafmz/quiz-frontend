@@ -50,7 +50,7 @@ const CreateQuizForm = () => {
     e.preventDefault();
 
     try {
-      // Étape 1 : Créer le quiz
+      // Étape 1 : Créer le quizz
       const quizResponse = await axios.post('http://localhost:9090/api/quizzes', {
         nom: quizData.nom,
         description: quizData.description,

@@ -19,12 +19,12 @@ const CategoryApp = () => {
     setCategories(res.data);
   };
 
-  // Gérer les changements dans le formulaire
+  // Gérer les changements dans le  formulaire
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Soumettre le formulaire pour ajouter ou modifier une catégorie
+  // Soumettre le formulaire pour ajoutter ou modifier une catégorie
   const handleSubmit = async (e) => {
     e.preventDefault();
     const categoryData = { nom: form.nom };
@@ -39,12 +39,12 @@ const CategoryApp = () => {
     fetchCategories();
   };
 
-  // Modifier une catégorie
+  // Modifier une categorie
   const handleEdit = (category) => {
     setForm({ id: category.id, nom: category.nom });
   };
 
-  // Supprimer une catégorie
+  // Supprimer une categorie
   const handleDelete = async (id) => {
     if (window.confirm('Confirmer la suppression ?')) {
       await axios.delete(`${API_URL}/categories/${id}`);
