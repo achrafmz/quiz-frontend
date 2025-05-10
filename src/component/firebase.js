@@ -1,7 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-
+//FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyB8YVAMYNsa8ZGZ7mYMAqaQsoQqydQIjfo",
     authDomain: "quizapp-f6a2c.firebaseapp.com",

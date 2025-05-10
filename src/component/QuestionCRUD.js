@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./QuestionCRUD.css"; // CSS modernisé ici
-
+//CRUD
 function QuestionCRUD() {
   const [questions, setQuestions] = useState([]);
   const [quizzes, setQuizzes] = useState([]);

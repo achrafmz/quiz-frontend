@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './QuizList.css';
-
+//QUIZ
 const QuizList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 80;

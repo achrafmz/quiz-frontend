@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye } from 'lucide-react';
-
+//quizAPP
 export default function QuizApp() {
   const [currentPage, setCurrentPage] = useState(1);
   
