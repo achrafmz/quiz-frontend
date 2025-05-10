@@ -4,7 +4,7 @@ import './Signup.css';
 import { auth, googleProvider } from './firebase';
 import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-
+//REGISTER
 const Register = () => {
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');

@@ -9,7 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-
+//SIGNUP
   const handleEmailLogin = async () => {
     if (!email || !password) {
       alert('Veuillez entrer un email et un mot de passe');

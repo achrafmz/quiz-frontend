@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-
+//QUIZDETAILS
 const QuizDetail = () => {
   const { id } = useParams(); // Récupère l'ID du quiz depuis l'URL
   const [quiz, setQuiz] = useState(null);

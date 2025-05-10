@@ -4,7 +4,7 @@ import './Signup.css'; // On réutilise ton style Signup
 import { auth, googleProvider } from './firebase'; // adapte si ton fichier firebase est ailleurs
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-
+//LOGIN
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

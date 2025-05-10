@@ -105,5 +105,5 @@ const QuizList = () => {
     </div>
   );
 };
-
+//QUIZ LIST
 export default QuizList;
