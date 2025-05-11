@@ -11,7 +11,7 @@ const QuizTestPage = () => {
   const [isCorrect, setIsCorrect] = useState(false);
 
   useEffect(() => {
-    // Fetch quizzes from the backend
+    // Fetch quizes from the backend
     axios
       .get("http://localhost:8080/api/quizzes")
       .then((response) => {
